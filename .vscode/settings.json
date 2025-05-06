@@ -1,0 +1,31 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "172.29.10.98",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "Test",
+            "database": "users_db",
+            "username": "postgres"
+        },
+        {
+            "previewLimit": 50,
+            "server": "172.29.10.98",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "Database : document_form",
+            "database": "document_form",
+            "username": "postgres"
+        },
+        {
+            "previewLimit": 50,
+            "server": "172.29.10.98",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "Test3",
+            "database": "document_form",
+            "username": "postgres"
+        }
+    ]
+}

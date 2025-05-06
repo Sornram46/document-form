@@ -1,0 +1,100 @@
+.card {
+  border-radius: 10px;
+  border: none;
+}
+
+.card-header {
+  border-radius: 10px 10px 0 0 !important;
+  padding: 1rem;
+}
+
+.form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.form-label {
+  font-weight: 500;
+}
+
+.btn {
+  padding: 0.5rem 2rem;
+}
+
+/* Styles for autocomplete */
+.suggestion-item {
+  transition: background-color 0.2s ease;
+}
+
+.suggestion-item:hover {
+  background-color: #f0f7ff;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none !important;
+}
+
+.z-1000 {
+  z-index: 1000;
+}
+
+/* สไตล์สำหรับตัวแสดงผล loading */
+@keyframes spinner {
+  to { transform: rotate(360deg); }
+}
+
+.spinner-border {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 0.2em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spinner .75s linear infinite;
+}
+
+/* Validation styles */
+.form-control:invalid:focus,
+.form-select:invalid:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+.was-validated .form-control:invalid:focus,
+.was-validated .form-select:invalid:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: #dc3545;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 0.1875rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+/* Hide validation icon for number inputs */
+input[type="number"].form-control.is-valid,
+input[type="number"].form-control.is-invalid {
+  background-image: none;
+  padding-right: 0.75rem;  /* Reset padding to default */
+}
+
+.equipment-quantity {
+  background-image: none !important;
+  padding-right: 0.75rem !important;
+  border-color: #ced4da !important; /* Always use default border color */
+}
+
+.equipment-quantity:focus {
+  border-color: #86b7fe !important;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+/* Hide validation feedback for equipment quantity fields */
+.equipment-quantity + .invalid-feedback {
+  display: none !important;
+}
+
