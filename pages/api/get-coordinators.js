@@ -15,9 +15,9 @@ export default async function handler(req, res) {
       SELECT u.username, u.first_name, u.last_name, u.department_id, d.dept_name_th
       FROM users u
       LEFT JOIN departments d ON u.department_id = d.dept_id
-      WHERE d.dept_name_th = 'เทคโนโลยีสารสนเทศ'
       ORDER BY u.first_name ASC
     `;
+    // WHERE d.dept_name_th = 'เทคโนโลยีสารสนเทศ'
     
     const result = await pool.query(query);
     

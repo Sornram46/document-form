@@ -1,35 +1,104 @@
-import { useState } from 'react';
-import { Form, Button, Card, Container, Accordion, Alert } from 'react-bootstrap';
+import { useState, useEffect } from 'react';
+import { Form, Button, Card, Container, Accordion, Alert, ButtonGroup } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import Swal from 'sweetalert2'; // Import SweetAlert2
-import EmployeeInfoSection from '../components/external-form/EmployeeExternal';
-import RequestDetailsSection from '../components/external-form/RequestExternal';
+import Swal from 'sweetalert2';
 import Link from 'next/link';
 
-export default function externalForm() {
+// Import components for internal form
+import EmployeeInfoInternal from '../components/internal-form/EmployeeInfoSection';
+import RequestDetailsInternal from '../components/internal-form/RequestDetailsSection';
+
+// Import components for external form
+import EmployeeInfoExternal from '../components/external-form/EmployeeExternal';
+import RequestDetailsExternal from '../components/external-form/RequestExternal';
+
+export default function CombinedForm() {
   // สร้างวันที่ปัจจุบันในรูปแบบ YYYY-MM-DD
   const today = new Date().toISOString().split('T')[0];
 
+  // State สำหรับเลือกประเภทฟอร์ม (internal หรือ external)
+  const [formType, setFormType] = useState('internal');
+
   const [formData, setFormData] = useState({
-    // Employee Info
+    // ข้อมูลทั่วไป
     employeeId: '',
+    firstName: '',
+    lastName: '',
     fullName: '',
     position: '',
     department: '',
-
-    // Request Details
+    dept_name_th: '',
+    phone: '',
+    company: '',
+    email: '',
+    
+    // รายละเอียดคำขอ
     requestType: '',
     details: '',
-    requestDate: today, // ตั้งค่าเริ่มต้นของ requestDate เป็นวันที่ปัจจุบัน
-    visitDate: today,   // ตั้งค่าเริ่มต้นของ visitDate เป็นวันที่ปัจจุบัน
-    importExportOption: ''
-    // Removed Approval Info
+    requestDate: today,
+    visitDate: today,
+    visitTimeStart: '',
+    visitTimeEnd: '',
+    dataCenter: false,
+    supportRoom: false,
+    supportRoomDetails: '',
+    purpose: '',
+    coordinator: '', 
+    coordinatorFullName: '',
+    coordinatorDept: '',
+    importExportOption: 'nonImportAccess',
+    
+    // arrays - ต้องรีเซ็ตเป็น array ว่างหรือมีค่าเริ่มต้น
+    visitors: [{ name: '', position: '' }],
+    equipment: [{ name: '', importQuantity: 0, exportQuantity: 0 }]
   });
 
-  const [activeKey, setActiveKey] = useState('0'); 
+  const [activeKey, setActiveKey] = useState('0');
   const [validated, setValidated] = useState(false);
   const [showErrorAlert, setShowErrorAlert] = useState(false);
   const [formErrors, setFormErrors] = useState([]);
+
+  // รีเซ็ตฟอร์มเมื่อเปลี่ยนประเภทฟอร์ม
+  useEffect(() => {
+    // รีเซ็ตค่าฟอร์มเมื่อมีการเปลี่ยนประเภทฟอร์ม
+    setFormData({
+      // ข้อมูลทั่วไป
+      employeeId: '',
+      firstName: '',
+      lastName: '',
+      fullName: '',
+      position: '',
+      department: '',
+      dept_name_th: '',
+      phone: '',
+      company: '',
+      email: '',
+      
+      // รายละเอียดคำขอ
+      requestType: '',
+      details: '',
+      requestDate: today,
+      visitDate: today,
+      visitTimeStart: '',
+      visitTimeEnd: '',
+      dataCenter: false,
+      supportRoom: false,
+      supportRoomDetails: '',
+      purpose: '',
+      coordinator: '', 
+      coordinatorFullName: '',
+      coordinatorDept: '',
+      importExportOption: 'nonImportAccess',
+      
+      // arrays 
+      visitors: [{ name: '', position: '' }],
+      equipment: [{ name: '', importQuantity: 0, exportQuantity: 0 }]
+    });
+    setValidated(false);
+    setActiveKey('0');
+    setShowErrorAlert(false);
+    setFormErrors([]);
+  }, [formType, today]);
 
   // Modified handleInputChange with debugging
   const handleInputChange = (e) => {
@@ -51,7 +120,6 @@ export default function externalForm() {
     const form = document.querySelector('form');
     if (!form) return false;
     
-    // Get all invalid inputs in the form
     let invalidInputs;
     
     if (sectionNumber === 1) {
@@ -83,7 +151,7 @@ export default function externalForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
     // ตรวจสอบว่าทุกรายการอุปกรณ์มีจำนวนนำเข้ามากกว่า 0 หรือไม่
     const hasInvalidImport = formData.importExportOption === 'importAccess' && 
       formData.equipment.some(item => item.importQuantity <= 0);
@@ -124,13 +192,16 @@ export default function externalForm() {
     console.log('Form submitted successfully:', formData);
     
     try {
+      // เลือก API endpoint ตามประเภทฟอร์ม
+      const apiEndpoint = formType === 'internal' ? '/api/submit-form' : '/api/submit-external-form';
+      
       // ส่งข้อมูลไปยัง API
-      const response = await fetch('/api/submit-external-form', {
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({...formData, type_form: formType}),
       });
       
       if (response.ok) {
@@ -143,19 +214,26 @@ export default function externalForm() {
           confirmButtonColor: '#28a745',
         }).then((result) => {
           if (result.isConfirmed) {
-            // สร้างวันที่ปัจจุบันอีกครั้ง เพื่อให้แน่ใจว่าเป็นวันที่ปัจจุบันจริงๆ
+            // สร้างวันที่ปัจจุบันอีกครั้ง
             const today = new Date().toISOString().split('T')[0];
             
-            // reset form ให้ถูกต้องและครบถ้วน
+            // reset form
             setFormData({
-              // ข้อมูลบุคคลภายนอก
+              // ข้อมูลทั่วไป
+              employeeId: '',
               firstName: '',
               lastName: '',
+              fullName: '',
+              position: '',
+              department: '',
+              dept_name_th: '',
               phone: '',
               company: '',
               email: '',
               
               // รายละเอียดคำขอ
+              requestType: '',
+              details: '',
               requestDate: today,
               visitDate: today,
               visitTimeStart: '',
@@ -164,34 +242,26 @@ export default function externalForm() {
               supportRoom: false,
               supportRoomDetails: '',
               purpose: '',
-              
-              // ข้อมูลผู้ประสานงาน
-              coordinator: '', 
+              coordinator: '',
               coordinatorFullName: '',
               coordinatorDept: '',
-              
-              // รายการอื่นๆ
               importExportOption: 'nonImportAccess',
               
-              // arrays - ต้องรีเซ็ตเป็น array ว่างหรือมีค่าเริ่มต้น
+              // arrays
               visitors: [{ name: '', position: '' }],
               equipment: [{ name: '', importQuantity: 0, exportQuantity: 0 }]
             });
             
-            // รีเซ็ตการตรวจสอบและกลับไปยังส่วนแรกของฟอร์ม
+            // รีเซ็ต state อื่นๆ
             setValidated(false);
             setActiveKey('0');
-            
-            // เลื่อนไปด้านบนของหน้า
             window.scrollTo(0, 0);
-            
-            // เคลียร์ข้อความแจ้งเตือนต่างๆ
             setShowErrorAlert(false);
             setFormErrors([]);
           }
         });
       } else {
-        // ดึงข้อมูล error และแสดงผ่าน SweetAlert2
+        // ดึงข้อมูล error
         const errorData = await response.json();
         Swal.fire({
           icon: 'error',
@@ -203,7 +273,6 @@ export default function externalForm() {
       }
     } catch (error) {
       console.error('Error submitting form:', error);
-      // แสดง SweetAlert2 สำหรับ network error
       Swal.fire({
         icon: 'error',
         title: 'เกิดข้อผิดพลาดการเชื่อมต่อ!',
@@ -219,20 +288,52 @@ export default function externalForm() {
     setActiveKey(eventKey);
   };
 
-
   return (
     <Container className="py-4">
-        {/* เพิ่มปุ่มย้อนกลับที่ด้านบนของฟอร์ม */}
-        <div className="mb-3">
+      {/* ปุ่มย้อนกลับ */}
+      <div className="mb-3">
         <Link href="/general-page/request-permission" passHref>
-            <Button variant="outline-primary">
+          <Button variant="outline-primary">
             &larr; กลับไปหน้าหลัก
-            </Button>
+          </Button>
         </Link>
-        </div>
+      </div>
+      
+      {/* ส่วนเลือกประเภทฟอร์ม */}
+      <Card className="shadow mb-4">
+        <Card.Header className="bg-secondary text-white">
+          <h4 className="mb-0">เลือกประเภทแบบฟอร์ม</h4>
+        </Card.Header>
+        <Card.Body>
+          <div className="d-flex justify-content-center">
+            <ButtonGroup className="mb-3">
+              <Button 
+                variant={formType === 'internal' ? 'primary' : 'outline-primary'} 
+                onClick={() => setFormType('internal')}
+                className="px-4"
+              >
+                <i className="fas fa-user-tie me-2"></i>
+                สำหรับบุคลากรภายใน
+              </Button>
+              <Button 
+                variant={formType === 'external' ? 'danger' : 'outline-danger'} 
+                onClick={() => setFormType('external')}
+                className="px-4"
+              >
+                <i className="fas fa-user me-2"></i>
+                สำหรับบุคคลภายนอก
+              </Button>
+            </ButtonGroup>
+          </div>
+        </Card.Body>
+      </Card>
+      
+      {/* ส่วนแบบฟอร์มหลัก */}
       <Card className="shadow">
-        <Card.Header className="bg-danger text-white">
-          <h4 className="mb-0">แบบฟอร์มสำหรับบุคลากรภายนอก</h4>
+        <Card.Header className={`${formType === 'internal' ? 'bg-primary' : 'bg-danger'} text-white`}>
+          <h4 className="mb-0">
+            {formType === 'internal' ? 'แบบฟอร์มสำหรับบุคลากรภายใน' : 'แบบฟอร์มสำหรับบุคคลภายนอก'}
+          </h4>
         </Card.Header>
         <Card.Body>
           {showErrorAlert && (
@@ -252,15 +353,23 @@ export default function externalForm() {
                 <Accordion.Header>
                   <span className="text-primary" style={{ fontWeight: 'bold', fontSize: '16px' }}>
                     <i className="fas fa-user-circle me-2"></i>
-                    ส่วนที่ 1: ข้อมูลพนักงาน
+                    ส่วนที่ 1: ข้อมูล{formType === 'internal' ? 'พนักงาน' : 'บุคคลภายนอก'}
                   </span>
                 </Accordion.Header>
                 <Accordion.Body data-section="1">
-                  <EmployeeInfoSection
-                    formData={formData}
-                    handleInputChange={handleInputChange}
-                    validated={validated}
-                  />
+                  {formType === 'internal' ? (
+                    <EmployeeInfoInternal
+                      formData={formData}
+                      handleInputChange={handleInputChange}
+                      validated={validated}
+                    />
+                  ) : (
+                    <EmployeeInfoExternal
+                      formData={formData}
+                      handleInputChange={handleInputChange}
+                      validated={validated}
+                    />
+                  )}
                   <div className="text-end mt-3">
                     <Button variant="primary" onClick={() => setActiveKey('1')}>
                       ถัดไป
@@ -277,23 +386,29 @@ export default function externalForm() {
                   </span>
                 </Accordion.Header>
                 <Accordion.Body data-section="2">
-                  <RequestDetailsSection
-                    formData={formData}
-                    handleInputChange={handleInputChange}
-                    validated={validated}
-                  />
+                  {formType === 'internal' ? (
+                    <RequestDetailsInternal
+                      formData={formData}
+                      handleInputChange={handleInputChange}
+                      validated={validated}
+                    />
+                  ) : (
+                    <RequestDetailsExternal
+                      formData={formData}
+                      handleInputChange={handleInputChange}
+                      validated={validated}
+                    />
+                  )}
                   <div className="d-flex justify-content-between mt-3">
                     <Button variant="secondary" onClick={() => setActiveKey('0')}>
                       ย้อนกลับ
                     </Button>
-                    <Button variant="success" type="submit">
+                    <Button variant={formType === 'internal' ? 'success' : 'danger'} type="submit">
                       ส่งแบบฟอร์ม
                     </Button>
                   </div>
                 </Accordion.Body>
               </Accordion.Item>
-              
-              {/* Removed Approval Section */}
             </Accordion>
           </Form>
         </Card.Body>

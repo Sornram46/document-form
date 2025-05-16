@@ -6,6 +6,7 @@ import Link from 'next/link';
 import EmployeeInfoSection from '../components/internal-form/EmployeeInfoSection';
 import RequestDetailsSection from '../components/internal-form/RequestDetailsSection';
 
+
 export default function InternalForm() {
   // สร้างวันที่ปัจจุบันในรูปแบบ YYYY-MM-DD
   const today = new Date().toISOString().split('T')[0];
@@ -84,6 +85,15 @@ export default function InternalForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // ตรวจสอบว่าทุกรายการอุปกรณ์มีจำนวนนำเข้ามากกว่า 0 หรือไม่
+    const hasInvalidImport = formData.importExportOption === 'importAccess' && 
+      formData.equipment.some(item => item.importQuantity <= 0);
+    
+    if (hasInvalidImport) {
+      setValidated(true); // ทำให้แสดง validation message
+      return; // ไม่ส่งแบบฟอร์มถ้าไม่ผ่านการตรวจสอบ
+    }
+    
     const form = e.currentTarget;
     setValidated(true);
     
@@ -134,24 +144,55 @@ export default function InternalForm() {
           confirmButtonColor: '#28a745',
         }).then((result) => {
           if (result.isConfirmed) {
-            // Reset form หรือ redirect ไปหน้าอื่น
-            // window.location.href = '/thank-you'; // ตัวอย่าง redirect
-            // หรือ reset form
+            // สร้างวันที่ปัจจุบันอีกครั้ง เพื่อให้แน่ใจว่าเป็นวันที่ปัจจุบันจริงๆ
+            const today = new Date().toISOString().split('T')[0];
+            
+            // reset form ให้ถูกต้องและครบถ้วน
             setFormData({
-              // Employee Info
+              // ข้อมูลพนักงาน
               employeeId: '',
+              firstName: '',
+              lastName: '', // แก้ไขจาก lastNmae เป็น lastName
               fullName: '',
               position: '',
               department: '',
-              // Request Details
-              requestType: '',
-              details: '',
+              dept_name_th: '',
+              phone: '',
+              
+              // รายละเอียดคำขอ
               requestDate: today,
               visitDate: today,
-              importExportOption: ''
+              visitTimeStart: '',
+              visitTimeEnd: '',
+              dataCenter: false,
+              supportRoom: false,
+              supportRoomDetails: '',
+              purpose: '',
+              coordinator: '',
+              coordinatorFullname: '',
+              coordinatorDept: '',
+              rank: '',
+              
+              // รายการอื่นๆ
+              requestType: '',
+              details: '',
+              importExportOption: false, // กำหนดเพียงครั้งเดียว
+              
+              // arrays
+              visitors: [{ name: '', position: '' }],
+              equipment: [{ name: '', importQuantity: 0, exportQuantity: 0 }]
             });
+            
+            // รีเซ็ตการตรวจสอบและกลับไปยังส่วนแรกของฟอร์ม
             setValidated(false);
-            setActiveKey('0'); // กลับไปที่ส่วนแรกของฟอร์ม
+            setActiveKey('0');
+            
+            // เลื่อนไปด้านบนของหน้า
+            window.scrollTo(0, 0);
+            
+            // เคลียร์ข้อความแจ้งเตือนต่างๆ
+            setShowErrorAlert(false);
+            setFormErrors([]);
           }
         });
       } else {
@@ -187,7 +228,7 @@ export default function InternalForm() {
     <Container className="py-4">
       {/* เพิ่มปุ่มย้อนกลับที่ด้านบนของฟอร์ม */}
       <div className="mb-3">
-        <Link href="/" passHref>
+        <Link href="/general-page/request-permission" passHref>
           <Button variant="outline-primary">
             &larr; กลับไปหน้าหลัก
           </Button>

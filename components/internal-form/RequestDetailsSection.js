@@ -282,6 +282,8 @@ export default function RequestDetailsSection({ formData, handleInputChange, val
         // แปลงค่าให้เป็นตัวเลขก่อนบันทึก
         const numValue = Number(value);
         newEquipment[index].importQuantity = Math.max(0, numValue);
+
+        newEquipment[index].isValid = numValue > 0;
         
         setEquipment(newEquipment);
         handleInputChange({
@@ -553,43 +555,50 @@ export default function RequestDetailsSection({ formData, handleInputChange, val
                                     {/* ส่วนนำเข้า */}
                                     <div className="d-flex align-items-center me-2">
                                         <Form.Label className="me-1 mb-0">นำเข้า:</Form.Label>
-                                        <div className="d-flex align-items-center">
-                                            <Button 
-                                                variant="outline-secondary" 
-                                                size="sm" 
-                                                onClick={() => handleEquipmentImportQuantityChange(index, Math.max(0, (item.importQuantity || 0) - 1))}
-                                                type="button"
-                                            >
-                                                -
-                                            </Button>
-                                            <Form.Control
-                                                type="text"  // เปลี่ยนจาก text เป็น number
-                                                name={`importQuantity-${index}`}
-                                                value={item.importQuantity || 0}
-                                                onChange={(e) => handleEquipmentImportQuantityChange(index, e.target.value)}
-                                                style={{ 
-                                                    width: '68px', 
-                                                    textAlign: 'center',
-                                                    color: 'black',
-                                                    backgroundColor: 'white',
-                                                    
-                                                    border: '1px solid #ced4da',
-                                                    boxShadow: 'none !important',
-                                                    appearance: 'textfield', // ปิดการแสดงลูกศรขึ้น-ลง
-                                                    MozAppearance: 'textfield'
-                                                   
-                                                }}
-                                                min={0}
-                                                className="equipment-quantity"
-                                            />
-                                            <Button
-                                                variant="outline-secondary" 
-                                                size="sm" 
-                                                onClick={() => handleEquipmentImportQuantityChange(index, (item.importQuantity || 0) + 1)}
-                                                type="button"
-                                            >
-                                                +
-                                            </Button>
+                                        <div className="d-flex flex-column">
+                                            <div className="d-flex align-items-center">
+                                                <Button 
+                                                    variant="outline-secondary" 
+                                                    size="sm" 
+                                                    onClick={() => handleEquipmentImportQuantityChange(index, Math.max(0, (item.importQuantity || 0) - 1))}
+                                                    type="button"
+                                                >
+                                                    -
+                                                </Button>
+                                                <Form.Control
+                                                    type="text"  
+                                                    name={`importQuantity-${index}`}
+                                                    value={item.importQuantity || 0}
+                                                    onChange={(e) => handleEquipmentImportQuantityChange(index, e.target.value)}
+                                                    style={{ 
+                                                        width: '68px', 
+                                                        textAlign: 'center',
+                                                        color: 'black',
+                                                        backgroundColor: 'white',
+                                                        border: validated && item.importQuantity <= 0 ? '2px solid #dc3545' : '1px solid #ced4da',
+                                                        boxShadow: validated && item.importQuantity <= 0 ? '0 0 0 0.25rem rgba(220, 53, 69, 0.25)' : 'none !important',
+                                                        appearance: 'textfield',
+                                                        MozAppearance: 'textfield',
+                                                        backgroundImage: 'none'
+                                                    }}
+                                                    min={0}
+                                                    className="equipment-quantity"
+                                                    isValid={false}
+                                                />
+                                                <Button
+                                                    variant="outline-secondary" 
+                                                    size="sm" 
+                                                    onClick={() => handleEquipmentImportQuantityChange(index, (item.importQuantity || 0) + 1)}
+                                                    type="button"
+                                                >
+                                                    +
+                                                </Button>
+                                            </div>
+                                            {validated && item.importQuantity <= 0 && (
+                                                <div className="text-danger" style={{fontSize: '0.875em', marginTop: '0.25rem'}}>
+                                                    จำนวนนำเข้าต้องมากกว่า 0
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 

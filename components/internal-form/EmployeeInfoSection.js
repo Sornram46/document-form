@@ -6,10 +6,12 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
   const suggestionsRef = useRef(null);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const inputRef = useRef(null);
+  const [fieldsLocked, setFieldsLocked] = useState(false);
   
-  // สำหรับปิด suggestions เมื่อคลิกนอก dropdown
   useEffect(() => {
-    function handleClickOutside(event) {
+    function handleClickOutside(event) {  
       if (suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
         setShowSuggestions(false);
       }
@@ -20,8 +22,55 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (!showSuggestions || suggestions.length === 0) return;
+      
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setSelectedIndex(prevIndex => {
+            const newIndex = prevIndex < suggestions.length - 1 ? prevIndex + 1 : 0;
+            const element = document.getElementById(`suggestion-item-${newIndex}`);
+            if (element) element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            return newIndex;
+          });
+          break;
+          
+        case 'ArrowUp':
+          e.preventDefault();
+          setSelectedIndex(prevIndex => {
+            const newIndex = prevIndex > 0 ? prevIndex - 1 : suggestions.length - 1;
+            const element = document.getElementById(`suggestion-item-${newIndex}`);
+            if (element) element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            return newIndex;
+          });
+          break;
+          
+        case 'Enter':
+          if (selectedIndex >= 0) {
+            e.preventDefault();
+            selectUser(suggestions[selectedIndex]);
+          }
+          break;
+          
+        case 'Escape':
+          setShowSuggestions(false);
+          setSelectedIndex(-1);
+          break;
+          
+        default:
+          break;
+      }
+    }
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showSuggestions, selectedIndex, suggestions]);
   
-  // ดึงข้อมูลพนักงานจาก API
   const fetchUsers = async (searchTerm) => {
     if (!searchTerm || searchTerm.length < 2) {
       setSuggestions([]);
@@ -38,6 +87,7 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
       
       const data = await response.json();
       setSuggestions(data);
+      setSelectedIndex(-1);
     } catch (error) {
       console.error('Error fetching users:', error);
       setSuggestions([]);
@@ -46,7 +96,6 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
     }
   };
 
-  // Debounce search to prevent too many API calls
   useEffect(() => {
     const timer = setTimeout(() => {
       if (formData.employeeId) {
@@ -56,29 +105,23 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
     
     return () => clearTimeout(timer);
   }, [formData.employeeId]);
-  // 
-  // เลือกผู้ใช้จากรายการแนะนำ
+  
   const selectUser = (user) => {
     console.log('Selected user data:', user);
     
-    // Make sure the username field from the API matches employeeId in the form
-    // First, ensure we have the username from the API response
     if (!user.username) {
       console.error('Username is missing from API response:', user);
       return;
     }
     
-    // Update form fields with user data
     const updates = [
       { name: 'employeeId', value: user.username },
       { name: 'firstName', value: user.first_name || '' },
       { name: 'lastName', value: user.last_name || '' },
       { name: 'department', value: user.dept_name_th || '' },
-      
       { name: 'phone', value: user.phone_num || '' }
     ];
     
-    // Apply each update using the handleInputChange function
     updates.forEach(update => {
       console.log(`Updating ${update.name} to:`, update.value);
       handleInputChange({
@@ -87,6 +130,8 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
     });
     
     setShowSuggestions(false);
+    setSelectedIndex(-1);
+    setFieldsLocked(true);
   };
   
   return (
@@ -95,12 +140,14 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
         <Form.Label><span style={{fontWeight:'600'}}>รหัสพนักงาน:</span></Form.Label>
         <div className="position-relative">
           <Form.Control
+            ref={inputRef}
             type="text"
             name="employeeId"
             value={formData.employeeId}
             onChange={(e) => {
               handleInputChange(e);
               setShowSuggestions(true);
+              setFieldsLocked(false);
             }}
             onFocus={() => setShowSuggestions(true)}
             placeholder="พิมพ์รหัสพนักงาน"
@@ -128,27 +175,29 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
               maxHeight: '250px', 
               overflowY: 'auto', 
               zIndex: 1000,
-              backgroundColor: '#e8f5e9', // สีเขียวอ่อนแบบ Material Design
-              borderColor: '#a5d6a7'      // สีเขียวอ่อนสำหรับขอบ
+              backgroundColor: '#e8f5e9',
+              borderColor: '#a5d6a7'
             }}
           >
               {suggestions.map((user, index) => (
-      <div 
-        key={index} 
-        className="p-2 border-bottom suggestion-item"
-        onClick={() => selectUser(user)}
-        style={{ 
-          cursor: 'pointer',
-          backgroundColor: index % 2 === 0 ? '#e8f5e9' : '#c8e6c9' // สีสลับแถว
-        }}
-        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#81c784'} // สีเขียวเข้มเมื่อ hover
-        onMouseOut={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#e8f5e9' : '#c8e6c9'} // กลับสู่สีเดิมเมื่อไม่ hover
-      >
-        <div><strong>รหัส: {user.username}</strong></div>
-        <div className="small text-muted">ชื่อ: {user.first_name || 'ไม่ระบุ'}</div>
-        <div className="small text-muted">นามสกุล: {user.last_name || 'ไม่ระบุ'}</div>
-        <div className="small text-muted">แผนก: {user.dept_name_th || 'ไม่ระบุ'}</div>
-      </div>
+                <div 
+                  id={`suggestion-item-${index}`}
+                  key={index} 
+                  className="p-2 border-bottom suggestion-item"
+                  onClick={() => selectUser(user)}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  style={{ 
+                    cursor: 'pointer',
+                    backgroundColor: index === selectedIndex 
+                      ? '#4caf50'
+                      : (index % 2 === 0 ? '#e8f5e9' : '#c8e6c9'),
+                    color: index === selectedIndex ? 'white' : 'inherit'
+                  }}
+                >
+                  <div><strong>รหัส: {user.username}</strong></div>
+                  <div className="small text-muted" style={index === selectedIndex ? {color: '#e8f5e9'} : {}}>ชื่อ: {user.first_name || 'ไม่ระบุ'}</div>
+                  <div className="small text-muted" style={index === selectedIndex ? {color: '#e8f5e9'} : {}}>นามสกุล: {user.last_name || 'ไม่ระบุ'}</div>
+                </div>
               ))}
             </div>
           )}
@@ -164,7 +213,8 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
           onChange={handleInputChange}
           required
           isInvalid={validated && !formData.firstName}
-          readOnly
+          readOnly={fieldsLocked}
+          style={fieldsLocked ? { backgroundColor: '#f8f9fa', borderColor: '#ced4da' } : {}}
         />
         <Form.Control.Feedback type="invalid">
           กรุณากรอกชื่อ
@@ -180,7 +230,8 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
           onChange={handleInputChange}
           required
           isInvalid={validated && !formData.lastName}
-          readOnly
+          readOnly={fieldsLocked}
+          style={fieldsLocked ? { backgroundColor: '#f8f9fa', borderColor: '#ced4da' } : {}}
         />
         <Form.Control.Feedback type="invalid">
           กรุณากรอกนามสกุล
@@ -211,6 +262,8 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
           onChange={handleInputChange}
           required
           isInvalid={validated && !formData.department}
+          readOnly={fieldsLocked}
+          style={fieldsLocked ? { backgroundColor: '#f8f9fa', borderColor: '#ced4da' } : {}}
         />
         <Form.Control.Feedback type="invalid">
           กรุณากรอกแผนก
@@ -224,7 +277,6 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
           name="phone"
           value={formData.phone}
           onChange={(e) => {
-            // รับเฉพาะตัวเลขเท่านั้น
             const value = e.target.value.replace(/\D/g, '');
             handleInputChange({
               target: {
@@ -234,7 +286,6 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
             });
           }}
           onKeyPress={(e) => {
-            // ป้องกันการพิมพ์อักขระที่ไม่ใช่ตัวเลข
             if (!/[0-9]/.test(e.key)) {
               e.preventDefault();
             }
@@ -245,7 +296,7 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
         <Form.Control.Feedback type="invalid">
           กรุณากรอกเบอร์โทรศัพท์
         </Form.Control.Feedback>
-      </Form.Group> 
+      </Form.Group>
     </div>
   );
 }

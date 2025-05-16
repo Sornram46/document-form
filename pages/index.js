@@ -15,6 +15,36 @@ export default function Home() {
       footer: 'จะเปิดให้บริการเร็วๆ นี้'
     });
   };
+  
+  // สร้างอาเรย์เก็บข้อมูลของ cards ทั้งหมด เพื่อให้ง่ายต่อการเพิ่ม/แก้ไขในอนาคต
+  const menuItems = [
+    {
+      title: "ฟอร์มขอเข้าพื้นที่",
+      icon: "👤",
+      link: "/combined-form",
+      isLink: true
+    },
+    {
+      title: "การจัดการ",
+      icon: "⚙️",
+      link: "/admin/login",
+      isLink: true
+    },
+    {
+      title: "แดชบอร์ด",
+      icon: "📈",
+      onClick: handleDashboardClick,
+      isLink: false
+    }
+    // สามารถเพิ่ม items ใหม่ได้ที่นี่ในอนาคต เช่น:
+    // {
+    //   title: "รายงาน",
+    //   icon: "📃",
+    //   link: "/reports",
+    //   isLink: true
+    // }
+  ];
+
   return (
     <>
       <Head>
@@ -33,56 +63,33 @@ export default function Home() {
         <div className="container text-center">
           <h3 className="h5 mb-3 text-muted">เลือกประเภทการขออนุญาต</h3>
           
-          {/* แถวที่ 1 - บุคคลภายนอกและภายใน */}
-          <div className="row g-3 mb-3">
-            {/* เปลี่ยนจาก col-12 col-md-6 เป็น col-6 เพื่อให้แสดง 2 การ์ดต่อแถวทุกขนาดหน้าจอ */}
-            <div className="col-6">
-              <Link href="/external-form" className="text-decoration-none">
-                <div className="card shadow p-3 hover-effect h-100">
-                  <div className="card-body p-2">
-                    <div className="icon-container">👤</div>
-                    <p className="mt-1 fw-bold card-text">บุคคลภายนอก</p>
-                  </div>
-                </div>
-              </Link>
-            </div>
-            
-            <div className="col-6">
-              <Link href="/internal-form" className="text-decoration-none">
-                <div className="card shadow p-3 hover-effect h-100">
-                  <div className="card-body p-2">
-                    <div className="icon-container">👥</div>
-                    <p className="mt-1 fw-bold card-text">บุคคลภายใน</p>
-                  </div>
-                </div>
-              </Link>
-            </div>
-          </div>
-          
-          {/* แถวที่ 2 - การจัดการและแดชบอร์ด */}
+          {/* ใช้เพียง row เดียว โดยไม่ต้องแบ่งเป็นหลายแถว */}
           <div className="row g-3">
-            <div className="col-6">
-              <Link href="/admin/login" className="text-decoration-none">
-                <div className="card shadow p-3 py-4 hover-effect h-100">
-                  <div className="card-body p-2">
-                    <div className="icon-container">⚙️</div>
-                    <p className="mt-1 fw-bold card-text">การจัดการ</p>
+            {menuItems.map((item, index) => (
+              <div className="col-6" key={index}>
+                {item.isLink ? (
+                  <Link href={item.link} className="text-decoration-none">
+                    <div className="card shadow p-3 hover-effect h-100">
+                      <div className="card-body p-2">
+                        <div className="icon-container">{item.icon}</div>
+                        <p className="mt-1 fw-bold card-text">{item.title}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ) : (
+                  <div 
+                    className="card shadow p-3 hover-effect h-100"
+                    onClick={item.onClick}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="card-body p-2">
+                      <div className="icon-container">{item.icon}</div>
+                      <p className="mt-1 fw-bold card-text">{item.title}</p>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            </div>
-            
-            <div className="col-6">
-              <div className="card shadow p-3 hover-effect h-100"
-               onClick={handleDashboardClick}
-               >
-                
-                <div className="card-body p-2">
-                  <div className="icon-container">📈</div>
-                  <p className="mt-1 fw-bold card-text">แดชบอร์ด</p>
-                </div>
+                )}
               </div>
-            </div>
+            ))}
           </div>
           
           <div className="mt-4 text-muted">
