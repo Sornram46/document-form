@@ -18,24 +18,36 @@ export default function AdminLogin() {
     setLoading(true);
     
     try {
-      const response = await fetch('/api/admin/login', {
+      console.log('🔄 Attempting login...', { username, passwordLength: password.length });
+      
+      // เปลี่ยนจาก /api/admin/login เป็น /api/auth/login
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
       
-      const data = await response.json();
+      console.log('📡 Response status:', response.status);
       
-      if (response.ok) {
-        // เมื่อล็อกอินสำเร็จ ไปยังหน้าจัดการ
+      const data = await response.json();
+      console.log('📦 Response data:', data);
+      
+      if (response.ok && data.success) {
+        console.log('✅ Login successful!');
+        
+        // บันทึก token และข้อมูลผู้ใช้
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('adminData', JSON.stringify(data.admin));
+        
+        // ไปยังหน้า admin-setup
         router.push('/admin/dashboard');
       } else {
-        // แสดงข้อความแจ้งเตือนกรณีล็อกอินไม่สำเร็จ
+        console.log('❌ Login failed:', data.message);
         setError(data.message || 'ไม่สามารถเข้าสู่ระบบได้');
       }
     } catch (err) {
+      console.error('🚨 Login error:', err);
       setError('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
-      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
@@ -66,6 +78,7 @@ export default function AdminLogin() {
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
+                    placeholder="กรอกชื่อผู้ใช้"
                     required
                   />
                 </Form.Group>
@@ -76,6 +89,7 @@ export default function AdminLogin() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    placeholder="กรอกรหัสผ่าน"
                     required
                   />
                 </Form.Group>

@@ -21,7 +21,8 @@ export default async function handler(req, res) {
         r.phone,
         r.status,
         r.document_number,
-        r.created_at
+        r.created_at,
+        purpose
       FROM 
         requests_external r
       WHERE

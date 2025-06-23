@@ -292,7 +292,7 @@ export default function CombinedForm() {
     <Container className="py-4">
       {/* ปุ่มย้อนกลับ */}
       <div className="mb-3">
-        <Link href="/general-page/request-permission" passHref>
+        <Link href="/" passHref>
           <Button variant="outline-primary">
             &larr; กลับไปหน้าหลัก
           </Button>

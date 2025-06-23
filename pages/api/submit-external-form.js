@@ -120,9 +120,9 @@ export default async function handler(req, res) {
     if (formData.visitors && formData.visitors.length > 0) {
       for (const visitor of formData.visitors) {
         await query(
-          `INSERT INTO request_external_visitors (request_id, name, position) 
-           VALUES ($1, $2, $3)`,
-          [requestId, visitor.name, visitor.position || null]
+          `INSERT INTO request_external_visitors (request_id, name,lastname, position) 
+           VALUES ($1, $2, $3 , $4)`,
+          [requestId, visitor.name,visitor.lastname, visitor.position || null]
         );
       }
     }
@@ -146,13 +146,23 @@ export default async function handler(req, res) {
       }
     }
 
-    res.status(200).json({ success: true, requestId });
+    // ส่งเลขที่เอกสารกลับไปด้วย
+    res.status(200).json({ 
+      success: true, 
+      requestId, 
+      documentNumber,
+      message: 'บันทึกข้อมูลสำเร็จ',
+      formType: 'external'
+    });
   } catch (error) {
     console.error('Error submitting form:', error);
-    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', 
+      error: error.message 
+    });
   }
 }
-
 // ในไฟล์ที่ส่งข้อมูล (ส่วนของการ submit ฟอร์ม)
 const handleSubmit = async (e) => {
   e.preventDefault();

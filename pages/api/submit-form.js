@@ -22,6 +22,14 @@ export default async function handler(req, res) {
   try {
     const formData = req.body;
 
+    // ตรวจสอบข้อมูลที่จำเป็น
+    if (!formData.coordinator) {
+      return res.status(400).json({ 
+        message: 'ข้อมูลไม่ถูกต้อง',
+        error: 'กรุณาเลือกผู้ประสานงาน (coordinator)'
+      });
+    }
+
     // 0. ตรวจสอบและเพิ่มผู้ประสานงานหากยังไม่มีในระบบ หรืออัปเดตข้อมูลหากมีแล้ว
     const coordinatorExists = await query(
       `SELECT username FROM coordinators WHERE username = $1`,
@@ -35,8 +43,8 @@ export default async function handler(req, res) {
          VALUES ($1, $2, $3)`,
         [
           formData.coordinator,
-          formData.coordinatorFullName || 'ไม่ระบุชื่อ', // ใช้ชื่อเต็มจาก dropdown
-          formData.coordinatorDept || 'ไม่ระบุแผนก'     // ใช้แผนกจาก dropdown
+          formData.coordinatorFullName || 'ไม่ระบุชื่อ',
+          formData.coordinatorDept || 'ไม่ระบุแผนก'
         ]
       );
     } else {
@@ -55,8 +63,8 @@ export default async function handler(req, res) {
 
     // Generate เลขที่เอกสาร (document_number) ในรูปแบบ FM9YYMM####
     const currentDate = new Date();
-    const thaiYear = (currentDate.getFullYear() + 543) % 100; // ใช้ปี พ.ศ. 2 ตัวท้าย
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0'); // เดือน 2 หลัก
+    const thaiYear = (currentDate.getFullYear() + 543) % 100;
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
     
     // ค้นหาเลขลำดับล่าสุดของเดือนนี้
     const lastNumberResult = await query(
@@ -75,7 +83,6 @@ export default async function handler(req, res) {
     
     let sequenceNumber = 1;
     if (lastNumberResult.length > 0) {
-      // ถ้ามีเลขที่เอกสารแล้ว ดึงเลข sequence 4 หลักสุดท้ายและเพิ่มอีก 1
       const lastNumber = lastNumberResult[0].document_number;
       const lastSequence = parseInt(lastNumber.slice(-4));
       sequenceNumber = lastSequence + 1;
@@ -84,7 +91,7 @@ export default async function handler(req, res) {
     // สร้างเลขที่เอกสารใหม่
     const documentNumber = `FM9${thaiYear}${month}${String(sequenceNumber).padStart(4, '0')}`;
 
-    // 1. บันทึกหรือแทนที่ข้อมูลพนักงาน (ใช้ ON CONFLICT DO UPDATE เพื่อ upsert)
+    // 1. บันทึกหรือแทนที่ข้อมูลพนักงาน
     await query(
       `INSERT INTO employees (employee_id, first_name, last_name, department, phone) 
        VALUES ($1, $2, $3, $4, $5)
@@ -93,7 +100,7 @@ export default async function handler(req, res) {
       [formData.employeeId, formData.firstName, formData.lastName, formData.department, formData.phone]
     );
 
-    // 2. บันทึกข้อมูลคำขอหลัก (เพิ่ม document_number)
+    // 2. บันทึกข้อมูลคำขอหลัก
     const result = await query(
       `INSERT INTO requests (
         employee_id, request_date, visit_date, visit_time_start, visit_time_end,
@@ -106,14 +113,14 @@ export default async function handler(req, res) {
         formData.visitDate,
         formData.visitTimeStart,
         formData.visitTimeEnd,
-        !!formData.dataCenter, // Convert undefined/null to false
+        !!formData.dataCenter,
         !!formData.supportRoom,
         formData.supportRoomDetails || null,
         formData.purpose,
         formData.coordinator,
         formData.importExportOption,
         'internal',
-        documentNumber // เพิ่มเลขที่เอกสาร
+        documentNumber
       ]
     );
 
@@ -123,8 +130,8 @@ export default async function handler(req, res) {
     if (formData.visitors && formData.visitors.length > 0) {
       for (const visitor of formData.visitors) {
         await query(
-          `INSERT INTO request_visitors (request_id, name, position) VALUES ($1, $2, $3)`,
-          [requestId, visitor.name, visitor.position || null]
+          `INSERT INTO request_visitors (request_id, name, lastname, position) VALUES ($1, $2, $3, $4)`,
+          [requestId, visitor.name || '', visitor.lastname || '', visitor.position || null]
         );
       }
     }
@@ -150,11 +157,17 @@ export default async function handler(req, res) {
     res.status(200).json({ 
       success: true, 
       requestId, 
-      documentNumber 
+      documentNumber,
+      message: 'บันทึกข้อมูลสำเร็จ',
+      formType: 'internal'
     });
   } catch (error) {
     console.error('Error submitting form:', error);
-    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', 
+      error: error.message 
+    });
   }
 }
 

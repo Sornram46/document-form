@@ -12,21 +12,27 @@ export default async function handler(req, res) {
   try {
     // ดึงข้อมูลจากตาราง requests สำหรับบุคคลภายใน (มี employee_id)
     const result = await pool.query(`
-      SELECT 
-        request_id, 
-        employee_id, 
-        visit_date, 
-        status, 
-        document_number,
-        created_at
+        SELECT 
+        r.request_id, 
+        r.employee_id, 
+        r.visit_date, 
+        r.status, 
+        r.document_number,
+        r.created_at,
+        r.purpose,
+        e.first_name,
+        e.last_name
       FROM 
-        requests
+        requests r
+      LEFT JOIN 
+        employees e ON r.employee_id = e.employee_id
       WHERE 
-        employee_id IS NOT NULL
-        AND type_form = 'internal'
+        r.employee_id IS NOT NULL
+        AND r.type_form = 'internal'
       ORDER BY 
-        created_at DESC
+        r.created_at DESC
     `);
+    
     
     res.status(200).json({ 
       success: true, 

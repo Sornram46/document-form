@@ -185,6 +185,17 @@ export default function RequestDetailsSection({ formData, handleInputChange, val
             }
         });
     };
+    
+    const handleVisitorChangeLastname = (index, value) => {
+        const newVisitors = [...visitors];
+        newVisitors[index].lastname = value;
+        handleInputChange({
+            target: {
+                name: 'visitors',
+                value: newVisitors
+            }
+        });
+    };
 
     const handleVisitorPositionChange = (index, value) => {
         const newVisitors = [...visitors];
@@ -442,7 +453,7 @@ export default function RequestDetailsSection({ formData, handleInputChange, val
             <div className="d-flex gap-2">
                 <Form.Control
                     type="text"
-                    placeholder="ระบุรายชื่อผู้เข้าพื้นที่"
+                    placeholder="ชื่อ"
                     value={visitor.name || ''}
                     onChange={(e) => handleVisitorChange(index, e.target.value)}
                     required
@@ -457,6 +468,15 @@ export default function RequestDetailsSection({ formData, handleInputChange, val
                     </Button>  
                 )}
             </div>
+                    <div className='d-flex gap-2 mt-2'>
+                            <Form.Control
+                                type="text"
+                                placeholder="นามสกุล"
+                                value={visitor.lastname || ''}
+                                onChange={(e) => handleVisitorChangeLastname(index, e.target.value)}
+                                required
+                            />
+             </div>
         </div>
         <div>
             <Form.Control

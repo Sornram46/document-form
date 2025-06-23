@@ -205,21 +205,38 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
       </Form.Group>
       
       <Form.Group className="mb-3">
-        <Form.Label><span style={{fontWeight:'600'}}>ชื่อ:</span></Form.Label>
-        <Form.Control
-          type="text"
-          name="firstName"
-          value={formData.firstName} 
-          onChange={handleInputChange}
-          required
-          isInvalid={validated && !formData.firstName}
-          readOnly={fieldsLocked}
-          style={fieldsLocked ? { backgroundColor: '#f8f9fa', borderColor: '#ced4da' } : {}}
-        />
-        <Form.Control.Feedback type="invalid">
-          กรุณากรอกชื่อ
-        </Form.Control.Feedback>
-      </Form.Group>
+          <Form.Label><span style={{fontWeight:'600'}}>ชื่อ:</span></Form.Label>
+          <Form.Control
+            type="text"
+            name="firstName"
+            value={formData.firstName} 
+            onChange={(e) => {
+              // อนุญาตเฉพาะตัวอักษรไทย อังกฤษ และช่องว่าง
+              const value = e.target.value.replace(/[^a-zA-Zก-๙\s]/g, '');
+              handleInputChange({
+                target: {
+                  name: 'firstName',
+                  value
+                }
+              });
+            }}
+            onKeyPress={(e) => {
+              // ป้องกันการพิมพ์ตัวเลขและสัญลักษณ์พิเศษ
+              const allowedPattern = /[a-zA-Zก-๙\s]/;
+              if (!allowedPattern.test(e.key)) {
+                e.preventDefault();
+              }
+            }}
+            required
+            isInvalid={validated && !formData.firstName}
+            readOnly={fieldsLocked}
+            style={fieldsLocked ? { backgroundColor: '#f8f9fa', borderColor: '#ced4da' } : {}}
+            placeholder="กรอกชื่อ (ตัวอักษรเท่านั้น)"
+          />
+          <Form.Control.Feedback type="invalid">
+            กรุณากรอกชื่อ
+          </Form.Control.Feedback>
+        </Form.Group>
 
       <Form.Group className="mb-3">
         <Form.Label><span style={{fontWeight:'600'}}>นามสกุล:</span></Form.Label>
@@ -227,11 +244,28 @@ export default function EmployeeInfoSection({ formData, handleInputChange, valid
           type="text"
           name="lastName"
           value={formData.lastName}
-          onChange={handleInputChange}
+          onChange={(e) => {
+            // อนุญาตเฉพาะตัวอักษรไทย อังกฤษ และช่องว่าง
+            const value = e.target.value.replace(/[^a-zA-Zก-๙\s]/g, '');
+            handleInputChange({
+              target: {
+                name: 'lastName',
+                value
+              }
+            });
+          }}
+          onKeyPress={(e) => {
+            // ป้องกันการพิมพ์ตัวเลขและสัญลักษณ์พิเศษ
+            const allowedPattern = /[a-zA-Zก-๙\s]/;
+            if (!allowedPattern.test(e.key)) {
+              e.preventDefault();
+            }
+          }}
           required
           isInvalid={validated && !formData.lastName}
           readOnly={fieldsLocked}
           style={fieldsLocked ? { backgroundColor: '#f8f9fa', borderColor: '#ced4da' } : {}}
+          placeholder="กรอกนามสกุล (ตัวอักษรเท่านั้น)"
         />
         <Form.Control.Feedback type="invalid">
           กรุณากรอกนามสกุล

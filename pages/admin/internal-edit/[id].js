@@ -94,7 +94,7 @@ export default function InternalRequestEdit() {
           coordinatorFullname: request.coordinator_fullname || '', // เก็บ fullname แยกต่างหาก
           rank: request.coordinator_dept_name_th || request.coordinator_position || '',
           visitors: Array.isArray(request.visitors) && request.visitors.length > 0 
-            ? request.visitors.map(v => ({ name: v.name || '', position: v.position || '' }))
+            ? request.visitors.map(v => ({ name: v.name || '',lastname:v.lastname || '', position: v.position || '' }))
             : [{ name: '', position: '' }],
           importExportOption: request.import_export_option || 'nonImportAccess',
           equipment: Array.isArray(request.equipment) && request.equipment.length > 0

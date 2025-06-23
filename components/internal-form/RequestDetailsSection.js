@@ -195,11 +195,21 @@ export default function RequestDetailsSection({ formData, handleInputChange, val
             }
         });
     };
+    const handleVisitorChangeLastname = (index, value) => {
+        const newVisitors = [...visitors];
+        newVisitors[index].lastname = value;
+        handleInputChange({
+            target: {
+                name: 'visitors',
+                value: newVisitors
+            }
+        });
+    };
 
     const handleVisitorPositionChange = (index, value) => {
         const newVisitors = [...visitors];
         newVisitors[index].position = value;
-        setVisitors(newVisitors);
+        
         handleInputChange({
             target: {
                 name: 'visitors',
@@ -433,15 +443,20 @@ export default function RequestDetailsSection({ formData, handleInputChange, val
                 )}
             </Form.Group>
             
-            <Form.Group className="mb-3">
+           <Form.Group className="mb-3">
                 <Form.Label><span style={{fontWeight:'600'}}>ตำแหน่ง:</span></Form.Label>
                 <Form.Control
                     type="text"
                     name="rank"
                     value={formData.rank || ''}
                     onChange={handleInputChange}
-                    readOnly  // ทำให้เป็น read-only เพราะจะอัปเดตอัตโนมัติเมื่อเลือกผู้ประสานงาน
+                    readOnly // ทำให้เป็น read-only เพราะจะอัปเดตอัตโนมัติเมื่อเลือกผู้ประสานงาน
                     required
+                    style={{ 
+                        backgroundColor: '#f8f9fa', 
+                        borderColor: '#ced4da',
+                        color: '#6c757d'
+                    }}
                 />
             </Form.Group>
 
@@ -462,7 +477,7 @@ export default function RequestDetailsSection({ formData, handleInputChange, val
             <div className="d-flex gap-2">
                 <Form.Control
                     type="text"
-                    placeholder="ระบุรายชื่อผู้เข้าพื้นที่"
+                    placeholder="ชื่อ"
                     value={visitor.name || ''}
                     onChange={(e) => handleVisitorChange(index, e.target.value)}
                     required
@@ -474,8 +489,17 @@ export default function RequestDetailsSection({ formData, handleInputChange, val
                         onClick={() => handleRemoveVisitor(index)}
                     >
                         ลบ
-                    </Button>  
+                    </Button>
                 )}
+            </div>
+                <div className='d-flex gap-2 mt-2'>
+                <Form.Control
+                    type="text"
+                    placeholder="นามสกุล"
+                    value={visitor.lastname || ''}
+                    onChange={(e) => handleVisitorChangeLastname(index, e.target.value)}
+                    required
+                />
             </div>
         </div>
         <div>

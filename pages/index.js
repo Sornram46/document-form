@@ -31,10 +31,10 @@ export default function Home() {
       isLink: true
     },
     {
-      title: "แดชบอร์ด",
-      icon: "📈",
-      onClick: handleDashboardClick,
-      isLink: false
+      title: "แอดมิน",
+      icon: "👨‍💼",
+      link: "/auth/admin-login", // เพิ่ม link สำหรับ Admin
+      isLink: true
     }
     // สามารถเพิ่ม items ใหม่ได้ที่นี่ในอนาคต เช่น:
     // {
@@ -67,7 +67,7 @@ export default function Home() {
           <div className="row g-3">
             {menuItems.map((item, index) => (
               <div className="col-6" key={index}>
-                {item.isLink ? (
+                {item.isLink && item.link ? (
                   <Link href={item.link} className="text-decoration-none">
                     <div className="card shadow p-3 hover-effect h-100">
                       <div className="card-body p-2">

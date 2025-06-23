@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Table, Button, Badge, Spinner, Alert, Form }
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { FaArrowLeft, FaEdit } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaLock } from 'react-icons/fa'; // เพิ่ม FaLock
 
 export default function InternalRequestDetail() {
   const [loading, setLoading] = useState(true);
@@ -11,14 +11,31 @@ export default function InternalRequestDetail() {
   const [error, setError] = useState(null);
   const [status, setStatus] = useState('');
   const [comment, setComment] = useState('');
-  const [approver, setApprover] = useState(''); // เพิ่ม state สำหรับผู้อนุมัติ
+  const [approver, setApprover] = useState('');
   const [updating, setUpdating] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
+  
+  // เพิ่ม state สำหรับ user role
+  const [userRole, setUserRole] = useState('');
+  const [userInfo, setUserInfo] = useState(null);
   
   const router = useRouter();
   const { id } = router.query;
   
+  // เพิ่มฟังก์ชันตรวจสอบสิทธิ์
+  const canEditDelete = () => {
+    return userRole === 'admin' || userRole === 'super_admin';
+  };
+  
   useEffect(() => {
+    // ดึงข้อมูลผู้ใช้จาก localStorage
+    const adminData = localStorage.getItem('adminData');
+    if (adminData) {
+      const parsedData = JSON.parse(adminData);
+      setUserRole(parsedData.role || '');
+      setUserInfo(parsedData);
+    }
+
     if (id) {
       fetchRequestDetails();
     }
@@ -121,6 +138,11 @@ export default function InternalRequestDetail() {
   };
   
   const handleEdit = () => {
+    if (!canEditDelete()) {
+      // แสดงข้อความเตือนถ้าไม่มีสิทธิ์
+      Alert.warning('ไม่มีสิทธิ์แก้ไข', 'เฉพาะ Admin เท่านั้นที่สามารถแก้ไขข้อมูลได้');
+      return;
+    }
     router.push(`/admin/internal-edit/${id}`);
   };
   
@@ -160,6 +182,16 @@ export default function InternalRequestDetail() {
           </Alert>
         )}
 
+        {/* แสดงข้อความแจ้งเตือนสำหรับ approver */}
+        {userRole === 'approver' && (
+          <Alert variant="info" className="mb-3 d-flex align-items-center">
+            <FaLock className="me-2" />
+            <div>
+              <strong>สิทธิ์ Approver:</strong> คุณสามารถดูรายละเอียดได้ แต่ไม่สามารถแก้ไขข้อมูลได้ (เฉพาะ Admin เท่านั้น)
+            </div>
+          </Alert>
+        )}
+
         <Row className="justify-content-center">
           <Col md={8}>
             <Card className="shadow-sm mb-4">
@@ -174,16 +206,46 @@ export default function InternalRequestDetail() {
                     >
                       <FaArrowLeft className="me-1" /> ย้อนกลับ
                     </Button>
-                    <Button 
-                      variant="warning"
-                      onClick={handleEdit}
-                    >
-                      <FaEdit className="me-1" /> แก้ไข
-                    </Button>
+                    
+                    {/* ปุ่มแก้ไขที่ตรวจสอบสิทธิ์ */}
+                    {canEditDelete() ? (
+                      <Button 
+                        variant="warning"
+                        onClick={handleEdit}
+                        title="แก้ไขข้อมูล"
+                      >
+                        <FaEdit className="me-1" /> แก้ไข
+                      </Button>
+                    ) : (
+                      <Button 
+                        variant="secondary"
+                        disabled
+                        title="ไม่มีสิทธิ์แก้ไข (เฉพาะ Admin เท่านั้น)"
+                      >
+                        <FaLock className="me-1" /> ล็อค
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Card.Header>
+              
+              {/* แสดงข้อมูลผู้ใช้ปัจจุบัน */}
               <Card.Body>
+                <div className="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                  <div className="small text-muted">
+                    <strong>ผู้ดู:</strong> {userInfo?.fullName || userInfo?.username || 'ไม่ระบุ'} 
+                    ({userRole === 'admin' ? 'ผู้ดูแลระบบ' : userRole === 'approver' ? 'ผู้อนุมัติ' : 'ผู้ใช้'})
+                  </div>
+                  <div className="small text-muted">
+                    <strong>สิทธิ์:</strong> 
+                    {canEditDelete() ? (
+                      <span className="text-success">แก้ไขได้</span>
+                    ) : (
+                      <span className="text-warning">ดูอย่างเดียว</span>
+                    )}
+                  </div>
+                </div>
+
                 <Row className="mb-4">
                   <Col md={6}>
                     <h5 className="border-bottom pb-2 mb-3">ข้อมูลพนักงาน</h5>
@@ -228,6 +290,25 @@ export default function InternalRequestDetail() {
                           <th>สถานะ</th>
                           <td>{getStatusBadge(request.status)}</td>
                         </tr>
+                        {/* แสดงข้อมูลผู้อนุมัติถ้ามี */}
+                        {request.approver && (
+                          <tr>
+                            <th>ผู้อนุมัติ</th>
+                            <td>{request.approver}</td>
+                          </tr>
+                        )}
+                        {request.approve_date && (
+                          <tr>
+                            <th>วันที่อนุมัติ</th>
+                            <td>{formatDate(request.approve_date)}</td>
+                          </tr>
+                        )}
+                        {request.reject_reason && (
+                          <tr>
+                            <th>เหตุผลการปฏิเสธ</th>
+                            <td className="text-danger">{request.reject_reason}</td>
+                          </tr>
+                        )}
                         <tr>
                           <th>พื้นที่ควบคุม</th>
                           <td>
@@ -305,79 +386,6 @@ export default function InternalRequestDetail() {
                     </Table>
                   </>
                 )}
-              </Card.Body>
-            </Card>
-          </Col>
-          
-          {/* Column จัดการสถานะ */}
-          <Col md={4}>
-            <Card className="mb-4">
-              <Card.Header className="bg-primary text-white">
-                <h5 className="mb-0">จัดการสถานะ</h5>
-              </Card.Header>
-              <Card.Body>
-                <Form onSubmit={updateRequestStatus}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>สถานะ</Form.Label>
-                    <Form.Select
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value)}
-                    >
-                      <option value="pending">รออนุมัติ</option>
-                      <option value="approved">อนุมัติ</option>
-                      <option value="rejected">ปฏิเสธ</option>
-                    </Form.Select>
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
-                    <Form.Label>ลงชื่อผู้อนุมัติ</Form.Label>
-                    <Form.Select
-                      value={approver}
-                      onChange={(e) => setApprover(e.target.value)}
-                      required={status === 'approved' || status === 'rejected'}
-                    >
-                      <option value="">====กรุณาเลือกผู้อนุมัติ====</option>
-                      <option value="วิภาดา งามวงษ์">วิภาดา งามวงษ์</option>
-                      <option value="สิริพร หมอยาเอก">สิริพร หมอยาเอก</option>
-                      <option value="พรหมพร นุชเจริญ">พรมพร</option>
-                    </Form.Select>
-                    {(status === 'approved' || status === 'rejected') && !approver && (
-                      <Form.Text className="text-danger">
-                        กรุณาเลือกผู้อนุมัติเมื่อต้องการอนุมัติหรือปฏิเสธคำขอ
-                      </Form.Text>
-                    )}
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
-                    <Form.Label>หมายเหตุ</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={3}
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      placeholder="ระบุหมายเหตุ (ถ้ามี)"
-                    />
-                  </Form.Group>
-                  <Button 
-                      type="submit" 
-                      variant="primary" 
-                      className="w-100"
-                      disabled={updating || status === 'pending'}
-                  >
-                    {updating ? 'กำลังอัปเดต...' : 'บันทึกการเปลี่ยนแปลง'}
-                  </Button>
-                </Form>
-              </Card.Body>
-            </Card>
-            
-            <Card>
-              <Card.Header className="bg-primary text-white">
-                <h5 className="mb-0">ข้อมูลเพิ่มเติม</h5>
-              </Card.Header>
-              <Card.Body>
-                <p><strong>วันที่สร้างคำขอ:</strong> {formatDate(request.created_at)}</p>
-               
-                <p><strong>ผู้ประสานงาน:</strong> {request.coordinator_username || 'ไม่ระบุ'}</p>
               </Card.Body>
             </Card>
           </Col>
